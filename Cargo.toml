@@ -10,7 +10,8 @@ resolver = "2"
 members = [
     "mesh2d",
     "sprite",
-    "move_sprite"
+    "move_sprite",
+    "transparency"
 ]
 
 [dependencies]
