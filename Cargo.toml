@@ -11,7 +11,8 @@ members = [
     "mesh2d",
     "sprite",
     "move_sprite",
-    "transparency"
+    "transparency",
+    "sprite_sheet"
 ]
 
 [dependencies]
