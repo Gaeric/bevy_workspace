@@ -2675,6 +2675,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sprite_flipping"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "sprite_sheet"
 version = "0.1.0"
 dependencies = [

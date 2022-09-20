@@ -12,7 +12,8 @@ members = [
     "sprite",
     "move_sprite",
     "transparency",
-    "sprite_sheet"
+    "sprite_sheet",
+    "sprite_flipping"
 ]
 
 [dependencies]
