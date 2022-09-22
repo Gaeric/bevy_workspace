@@ -14,7 +14,8 @@ members = [
     "transparency",
     "sprite_sheet",
     "sprite_flipping",
-    "shapes"
+    "shapes",
+    "text2d"
 ]
 
 [dependencies]
