@@ -16,7 +16,8 @@ members = [
     "sprite_flipping",
     "shapes",
     "text2d",
-    "mesh2d_vertex_color_texture"
+    "mesh2d_vertex_color_texture",
+    "system_param",
 ]
 
 [dependencies]
