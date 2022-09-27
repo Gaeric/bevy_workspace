@@ -18,7 +18,8 @@ members = [
     "text2d",
     "mesh2d_vertex_color_texture",
     "system_param",
-    "jaipur"
+    "jaipur",
+    "bounce"
 ]
 
 [dependencies]
