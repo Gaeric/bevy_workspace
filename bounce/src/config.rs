@@ -3,7 +3,7 @@ use bevy::prelude::*;
 pub const ARENA_WIDTH: f32 = 480.0;
 pub const ARENA_HEIGHT: f32 = 640.0;
 
-pub const BACKGOURND_SHADER: &str = "shaders/background.wgsl";
+pub const BACKGROUND_SHADER: &str = "shaders/background.wgsl";
 
 pub const FONT_FIRA_MONO: &str = "fonts/FiraMono-Medium.ttf";
 pub const FONT_FIRA_SANS: &str = "fonts/FiraSans-Bold.ttf";
