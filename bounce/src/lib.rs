@@ -4,6 +4,8 @@ mod config;
 mod background;
 mod game;
 mod score;
+mod menu;
+mod utils;
 
 #[derive(Hash, Debug, Eq, PartialEq, Clone)]
 pub enum AppState {
