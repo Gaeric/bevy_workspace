@@ -4,3 +4,6 @@ mod physics;
 mod battle;
 mod effects;
 mod enemy;
+mod hint;
+mod player;
+mod slits;
