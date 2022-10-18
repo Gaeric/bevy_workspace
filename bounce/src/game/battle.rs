@@ -9,6 +9,7 @@ impl Plugin for BattlePlugin {
                 .with_system(enter_battle)
                 .with_system(make_arena)
                 .with_system(make_ui)
+                .with_system(make_player)
                 .with_system(make_enemy)
                 .with_system(make_ball),
         )
