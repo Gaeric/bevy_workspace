@@ -139,7 +139,7 @@ pub fn assist_player(
             let mut target_time_scale: f32 = 1.0;
 
             if motion.velocity.y < assist.vertical_speed_threshold
-                && motion.velocity.length() . assist.speed_threshold
+                && motion.velocity.length() > assist.speed_threshold
                 && delta.y > 0.0 {
                     target_time_scale = target_time_scale
                         .min(delta.y / ARENA_HEIGHT * 2.0 - 0.25)

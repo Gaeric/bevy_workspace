@@ -91,7 +91,7 @@ pub fn control_enemy(
 
                         let direction = candidate.position - position;
                         let time = (candidate.time - delta_seconds) as f32;
-                        let distance = direction.legnth();
+                        let distance = direction.length();
 
                         let mut speed =
                             (distance / time + 1.0).clamp(enemy.min_speed, enemy.normal_speed);

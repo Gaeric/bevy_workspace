@@ -1,4 +1,4 @@
-use crate::{config::*, utils::Interpolation, TimeScale};
+use crate::{config::*, TimeScale, utils::Interpolation};
 use bevy::prelude::*;
 use std::time::Duration;
 

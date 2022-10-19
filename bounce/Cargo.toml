@@ -10,3 +10,9 @@ crate-type = ['cdylib', 'rlib']
 
 [dependencies]
 bevy = { version = "0.8.1", features = ["dynamic"]  }
+itertools = "0.10"
+bevy_kira_audio = { version = "0.12", features = [
+    "wav",
+    "flac",
+    "ogg"
+] }

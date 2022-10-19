@@ -16,7 +16,7 @@ impl Plugin for PhysicsPlugin {
             .with_system(collision.after(init_motion).after(movement));
 
         app.add_event::<CollisionEvent>()
-            .add_system_set_to_stage(CoreStage::PostUpdate, systems)
+            .add_system_set_to_stage(CoreStage::PostUpdate, systems);
     }
 }
 

@@ -123,7 +123,7 @@ pub fn heal_enemy_base(
         if let Some(heal) = heal.as_ref() {
             let amount = heal.amount_per_second * time.delta_seconds();
             base.hp += amount;
-            base.hp = base.hp.min(base.full_up);
+            base.hp = base.hp.min(base.full_hp);
         }
 
         if heal

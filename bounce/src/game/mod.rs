@@ -1,7 +1,12 @@
 use self::{
     ball::*, base::*, battle::*, effects::*, enemy::*, hint::*, physics::*, player::*, slits::*,
 };
-use crate::{config::*, score::Score};
+use crate::{config::*, score::Score, 
+            utils::{cleanup_system, escape_system, Damp, Intermediate},
+            AppState,AudioVolume, MusicTrack, TimeScale,
+};
+use bevy_kira_audio::{Audio, AudioControl};
+use itertools::Itertools;
 
 mod ball;
 mod base;
@@ -14,6 +19,7 @@ mod player;
 mod slits;
 
 use bevy::prelude::*;
+use bevy::time::FixedTimestep;
 
 pub struct GamePlugin;
 
@@ -34,8 +40,8 @@ impl Plugin for GamePlugin {
                 miss: Timer::from_seconds(0.5, false),
             })
             .init_resource::<Slits>()
-            .add_audio_channel::<BounceAudioChannel>()
-            .add_audio_channel::<ScoreAudioChannel>()
+            // .add_audio_channel::<BounceAudioChannel>()
+            // .add_audio_channel::<ScoreAudioChannel>()
             .add_startup_system(setup_game)
             .add_system_set(
                 SystemSet::new()
@@ -45,20 +51,20 @@ impl Plugin for GamePlugin {
                     .with_system(move_ball)
                     .with_system(activate_ball)
                     .with_system(update_ball)
-                    .with_system(ball_bounce)
+                    // .with_system(ball_bounce)
                     .with_system(heal_enemy_base)
                     .with_system(move_slit_block)
                     .with_system(slits_system)
-                    .with_system(bounce_audio)
-                    .with_system(score_audio)
-                    .with_system(score_effects)
-                    .with_system(bounce_effects)
+                    // .with_system(bounce_audio)
+                    // .with_system(score_audio)
+                    // .with_system(score_effects)
+                    // .with_system(bounce_effects)
                     .with_system(count_ball)
-                    .with_system(score_system)
+                    // .with_system(score_system)
                     .with_system(health_bar)
                     .with_system(health_bar_tracker)
-                    .with_system(make_player_hint)
-                    .with_system(make_ball_hint)
+                    // .with_system(make_player_hint)
+                    // .with_system(make_ball_hint)
                     .with_system(hint_system),
             )
             .add_system_set(
@@ -184,7 +190,7 @@ fn setup_game(
             .collect_vec(),
     });
 
-    commands.innit_resource::<Score>();
+    commands.init_resource::<Score>();
 }
 
 fn make_arena(mut commands: Commands) {
@@ -200,7 +206,7 @@ fn make_arena(mut commands: Commands) {
         })
         .insert_bundle((
             RigidBody::new(Vec2::new(ARENA_WIDTH, 32.0), 0.0, 0.9, 0.5),
-            PhysicsLayers::SPEARATE,
+            PhysicsLayers::SEPARATE,
             Cleanup,
         ))
         .with_children(|parent| {
@@ -414,6 +420,41 @@ fn make_player(mut commands: Commands, materials: Res<Materials>) {
                 transform: Transform::from_xyz(PADDLE_WIDTH / 2.0 - 8.0, 0.0, 0.1),
                 texture: materials.player.clone(),
                 ..default()
-            })
+            });
+        });
+}
+
+fn make_enemy(mut commands: Commands, materials: Res<Materials>) {
+    commands
+        .spawn_bundle(SpriteBundle {
+            transform: Transform::from_xyz(0.0, 160.0, 0.0),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(PADDLE_WIDTH, PADDLE_HEIGHT)),
+                color: PADDLE_COLOR,
+                ..default()
+            },
+            ..default()
+        })
+        .insert_bundle((
+            RigidBody::new(Vec2::new(PADDLE_WIDTH, PADDLE_HEIGHT), 3.0, 1.0, 1.0),
+            Motion::default(),
+            PhysicsLayers::PLAYER,
+            BounceAudio::Bounce,
+            Controller::default(),
+            Enemy::default(),
+            Cleanup,
+        ))
+        .with_children(|parent| {
+            parent.spawn_bundle(SpriteBundle {
+                transform: Transform::from_xyz(-PADDLE_WIDTH / 2.0 + 8.0, 0.0, 0.1),
+                texture: materials.enemy.clone(),
+                ..default()
+            });
+
+            parent.spawn_bundle(SpriteBundle {
+                transform: Transform::from_xyz(PADDLE_WIDTH / 2.0 - 8.0, 0.0, 0.1),
+                texture: materials.enemy.clone(),
+                ..default()
+            });
         });
 }

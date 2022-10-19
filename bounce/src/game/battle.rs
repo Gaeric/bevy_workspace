@@ -6,25 +6,23 @@ impl Plugin for BattlePlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_enter(AppState::Battle)
-                .with_system(enter_battle)
+                // .with_system(enter_battle)
                 .with_system(make_arena)
                 .with_system(make_ui)
                 .with_system(make_player)
-                .with_system(make_enemy)
-                .with_system(make_ball),
+                .with_system(make_enemy), // .with_system(make_ball),
         )
-            .add_system_set(
-                SystemSet::on_update(AppState::Battle)
-                    .with_system(escape_system)
-                    .with_system(reset_ball)
-                    .with_system(remove_ball)
-                    .with_system(player_hit)
-                    .with_system(player_miss)
-                    .with_system(game_over_system),
-            )
-            .add_system_set(
-                SystemSet::on_exit(AppState::Battle).with_system(cleanup_system::<Cleanup>),
-            );
+        .add_system_set(
+            SystemSet::on_update(AppState::Battle), // .with_system(escape_system)
+                                                    // .with_system(reset_ball)
+                                                    // .with_system(remove_ball)
+                                                    // .with_system(player_hit)
+                                                    // .with_system(player_miss)
+                                                    // .with_system(game_over_system),
+        )
+        .add_system_set(
+            SystemSet::on_exit(AppState::Battle).with_system(cleanup_system::<Cleanup>),
+        );
     }
 }
 
@@ -40,7 +38,7 @@ fn enter_battle(
     mut heal_events: EventWriter<HealEvent>,
 ) {
     // clear score state
-    score.timerstamp = time.seconds_since_startup();
+    score.timestamp = time.seconds_since_startup();
     score.hits = 0;
     score.miss = 0;
 
@@ -56,7 +54,6 @@ fn enter_battle(
         music_track.0 = GAME_MUSIC;
     }
 }
-
 
 fn game_over_system(
     time: Res<Time>,
@@ -74,15 +71,21 @@ fn game_over_system(
             time_scale_damp = GAME_OVER_TIME_SCALE_DAMP;
         }
 
-        time_scale.0 = time_scale.0.damp(target_time_scale, timer_scale_damp, timer.delta_seconds());
+        time_scale.0 = time_scale
+            .0
+            .damp(target_time_scale, time_scale_damp, time.delta_seconds());
 
-        if game_over.state_change_timer.tick(time.delta()).just_finished() {
+        if game_over
+            .state_change_timer
+            .tick(time.delta())
+            .just_finished()
+        {
             time_scale.reset();
             *game_over = GameOver::default();
 
             match event {
                 GameOverEvent::Win => app_state.set(AppState::Win).unwrap(),
-                GameOverEvent::Lost => app_state.set(AppState::Menu).unwrap(),
+                GameOverEvent::Lose => app_state.set(AppState::Menu).unwrap(),
             }
         } else {
             for event in game_over_events.iter() {

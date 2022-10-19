@@ -50,6 +50,14 @@ impl TimeScale {
 }
 
 
+pub struct AudioVolume {
+    pub music: f32,
+    pub effects: f32,
+}
+
+pub struct MusicTrack(&'static str);
+
+
 pub fn run() {
     let mut app = App::new();
     app.init_resource::<TimeScale>()
