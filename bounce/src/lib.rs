@@ -11,7 +11,7 @@ mod utils;
 pub enum AppState {
     Loading,
     Menu,
-    Setting,
+    Settings,
     Battle,
     Practice,
     Win,
@@ -62,9 +62,10 @@ pub fn run() {
     let mut app = App::new();
     app.init_resource::<TimeScale>()
         .add_plugins(DefaultPlugins)
-        .add_state(AppState::Win)
+        .add_state(AppState::Loading)
         .add_startup_system(setup)
         .add_plugin(score::ScorePlugin)
+        .add_plugin(game::GamePlugin)
         .add_plugin(background::BackgroundPlugin);
     app.run();
 }
