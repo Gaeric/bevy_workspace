@@ -1,11 +1,13 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::texture::ImageSettings};
+use bevy_kira_audio::AudioPlugin;
 
-mod config;
 mod background;
+mod config;
 mod game;
-mod score;
 mod menu;
+mod score;
 mod utils;
+mod loading;
 
 #[derive(Hash, Debug, Eq, PartialEq, Clone)]
 pub enum AppState {
@@ -69,7 +71,6 @@ impl TimeScale {
     }
 }
 
-
 pub struct AudioVolume {
     pub music: f32,
     pub effects: f32,
@@ -77,20 +78,37 @@ pub struct AudioVolume {
 
 pub struct MusicTrack(&'static str);
 
-
 pub fn run() {
     let mut app = App::new();
-    app.init_resource::<TimeScale>()
+    app
+        .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
+        .insert_resource(WindowDescriptor {
+            title: "Bounce UP!".into(),
+            width: config::ARENA_WIDTH,
+            height: config::ARENA_HEIGHT,
+            resizable: false,
+            ..default()
+        })
+        .insert_resource(ImageSettings::default_nearest())
+        .init_resource::<TimeScale>()
+        .insert_resource(AudioVolume {
+            music: 0.3,
+            effects: 1.0,
+        })
+        .insert_resource(MusicTrack(""));
+
+    app
         .add_plugins(DefaultPlugins)
-        .add_state(AppState::Menu)
+        .add_plugin(AudioPlugin)
+        .add_state(AppState::Loading)
         .add_startup_system(setup)
+        .add_plugin(loading::LoadingPlugin)
         .add_plugin(menu::MenuPlugin)
-        .add_plugin(score::ScorePlugin)
         .add_plugin(game::GamePlugin)
+        .add_plugin(score::ScorePlugin)
         .add_plugin(background::BackgroundPlugin);
     app.run();
 }
-
 
 fn setup(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());

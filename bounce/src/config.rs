@@ -11,7 +11,7 @@ pub const FONT_ARCADE: &str = "fonts/Arcade.ttf";
 pub const FONT_KARMATIC: &str  = "fonts/Karmatic.ttf";
 pub const FONT_BOXY: &str = "fonts/Boxy-Bold.ttf";
 pub const FONT_ALAGARD: &str = "fonts/Alagard.ttf";
-pub const FONT_INVASION: &str = "fronts/Invasion2000.ttf";
+pub const FONT_INVASION: &str = "fonts/Invasion2000.ttf";
 
 pub const PLAYER_SPRITE: &str = "sprites/player.png";
 pub const ENEMY_SPRITE: &str = "sprites/enemy.png";
