@@ -34,6 +34,26 @@ impl ColorText {
     }
 }
 
+#[derive(Component)]
+pub struct HintText {
+    index: usize,
+    timer: Timer,
+}
+
+impl HintText {
+    const HINT_TEXTS: [&'static str; 3] = [
+        "Control your ball speed!",
+        "Can your paddle catch the ball on its own?",
+        "Try to bounce; not to push!",
+    ];
+
+    pub fn new(duration: f32) -> Self {
+        Self {
+            index: 0,
+            timer: Timer::from_seconds(duration, true),
+        }
+    }
+}
 
 pub struct TimeScale(pub f32);
 
@@ -62,8 +82,9 @@ pub fn run() {
     let mut app = App::new();
     app.init_resource::<TimeScale>()
         .add_plugins(DefaultPlugins)
-        .add_state(AppState::Loading)
+        .add_state(AppState::Menu)
         .add_startup_system(setup)
+        .add_plugin(menu::MenuPlugin)
         .add_plugin(score::ScorePlugin)
         .add_plugin(game::GamePlugin)
         .add_plugin(background::BackgroundPlugin);
