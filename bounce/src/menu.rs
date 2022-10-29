@@ -19,7 +19,7 @@ impl Plugin for MenuPlugin {
                 SystemSet::new()
                     .label(ButtonSystems)
                     .with_system(button_system)
-                    // .with_system(button_action)
+                    .with_system(button_action)
                     // .with_system(value_system)
                     // .with_system(value_action),
             )
@@ -362,6 +362,24 @@ fn button_system(
                     }
                 }
             }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn button_action(
+    interaction_query: Query<(&Interaction, &ButtonAction), (Changed<Interaction>, With<Button>)>,
+    mut app_state: ResMut<State<AppState>>,
+) {
+    for (interaction, action) in interaction_query.iter() {
+        if *interaction == Interaction::Clicked {
+            let state = match action {
+                ButtonAction::Play => AppState::Battle,
+                ButtonAction::Tutorial => AppState::Practice,
+                ButtonAction::Settings => AppState::Settings,
+                ButtonAction::Back => AppState::Menu,
+            };
+            app_state.set(state).unwrap();
         }
     }
 }
