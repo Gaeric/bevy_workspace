@@ -32,7 +32,7 @@ impl Plugin for MenuPlugin {
             .add_system_set(
                 SystemSet::on_exit(AppState::Menu).with_system(cleanup_system::<Cleanup>),
             )
-            // .add_system_set(SystemSet::on_enter(AppState::Settings).with_system(make_settings))
+            .add_system_set(SystemSet::on_enter(AppState::Settings).with_system(make_settings))
             .add_system_set(SystemSet::on_update(AppState::Settings).with_system(escape_system))
             .add_system_set(
                 SystemSet::on_exit(AppState::Settings).with_system(cleanup_system::<Cleanup>),
@@ -140,7 +140,6 @@ fn make_menu(
     asset_server: Res<AssetServer>,
     button_style: Res<ButtonStyle>,
 ) {
-    println!("make menu");
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -230,23 +229,23 @@ fn make_menu(
                     });
                 });
 
-            parent.spawn_bundle(ButtonBundle {
-                style: button_style.button.clone(),
-                color: NORMAL_BUTTON.into(),
-                ..default()
-            })
-                .insert(ButtonAction::Tutorial)
-                .with_children(|parent| {
-                    parent.spawn_bundle(ImageBundle {
-                        style: button_style.icon.clone(),
-                        image: UiImage(asset_server.load(RETICLE_ICON)),
-                        ..default()
-                    });
-                    parent.spawn_bundle(TextBundle {
-                        text: Text::from_section("Practice", button_style.text.clone()),
-                        ..default()
-                    });
-                });
+            // parent.spawn_bundle(ButtonBundle {
+            //     style: button_style.button.clone(),
+            //     color: NORMAL_BUTTON.into(),
+            //     ..default()
+            // })
+            //     .insert(ButtonAction::Tutorial)
+            //     .with_children(|parent| {
+            //         parent.spawn_bundle(ImageBundle {
+            //             style: button_style.icon.clone(),
+            //             image: UiImage(asset_server.load(RETICLE_ICON)),
+            //             ..default()
+            //         });
+            //         parent.spawn_bundle(TextBundle {
+            //             text: Text::from_section("Practice", button_style.text.clone()),
+            //             ..default()
+            //         });
+            //     });
 
             parent.spawn_bundle(ButtonBundle {
                 style: button_style.button.clone(),
@@ -265,5 +264,72 @@ fn make_menu(
                         ..default()
                     });
                 });
+        });
+}
+
+
+fn make_settings(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    button_style: Res<ButtonStyle>,
+) {
+    commands
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                flex_direction: FlexDirection::ColumnReverse,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            color: Color::NONE.into(),
+            ..default()
+        })
+        .insert(Cleanup)
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle {
+                style: Style {
+                    position: UiRect {
+                        left: Val::Percent(10.0),
+                        ..default()
+                    },
+                    margin: UiRect {
+                        bottom: Val::Percent(10.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                text: Text::from_section(
+                    "Settings",
+                    TextStyle {
+                        font: asset_server.load(FONT_KARMATIC),
+                        font_size: 30.0,
+                        color: Color::WHITE,
+                    },
+                ).with_alignment(TextAlignment {
+                    horizontal: HorizontalAlign::Center,
+                    ..default()
+                }),
+                ..default()
+            });
+            
+            parent
+                .spawn_bundle(ButtonBundle {
+                    style: button_style.button.clone(),
+                    color: NORMAL_BUTTON.into(),
+                    ..default()
+                })
+                .insert(ButtonAction::Back)
+                .with_children(|parent| {
+                    parent.spawn_bundle(ImageBundle {
+                        style: button_style.icon.clone(),
+                        image: UiImage(asset_server.load(EXIT_ICON)),
+                        ..default()
+                    });
+                    parent.spawn_bundle(TextBundle {
+                        text: Text::from_section("Back", button_style.text.clone()),
+                        ..default()
+                    });
+                });
+
         });
 }
