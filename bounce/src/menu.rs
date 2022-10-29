@@ -18,7 +18,7 @@ impl Plugin for MenuPlugin {
             .add_system_set(
                 SystemSet::new()
                     .label(ButtonSystems)
-                    // .with_system(button_system)
+                    .with_system(button_system)
                     // .with_system(button_action)
                     // .with_system(value_system)
                     // .with_system(value_action),
@@ -41,7 +41,7 @@ impl Plugin for MenuPlugin {
 }
 
 const NORMAL_BUTTON: Color = Color::NONE;
-const HOVERED_BUTOON: Color = Color::WHITE;
+const HOVERED_BUTTON: Color = Color::WHITE;
 const PRESSED_BUTTON: Color = Color::WHITE;
 
 const NORMAL_SETTING_BUTTON: Color = Color::BLACK;
@@ -332,4 +332,36 @@ fn make_settings(
                 });
 
         });
+}
+
+
+#[allow(clippy::type_complexity)]
+fn button_system(
+    mut interaction_query: Query<
+            (&Interaction, &mut UiColor, &Children),
+        (Changed<Interaction>, With<Button>, With<ButtonAction>)
+            >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, children) in interaction_query.iter_mut() {
+        for child in children.iter() {
+            if let Ok(mut text) = text_query.get_mut(*child) {
+                let text_color = &mut text.sections[0].style.color;
+                match *interaction {
+                    Interaction::Clicked => {
+                        *text_color = PRESSED_BUTTON_TEXT;
+                        *color = PRESSED_BUTTON.into();
+                    }
+                    Interaction::Hovered => {
+                        *text_color = HOVERED_BUTTON_TEXT;
+                        *color = HOVERED_BUTTON.into();
+                    }
+                    Interaction::None => {
+                        *text_color = NORMAL_BUTTON_TEXT;
+                        *color = NORMAL_BUTTON.into();
+                    }
+                }
+            }
+        }
+    }
 }
