@@ -6,19 +6,21 @@ impl Plugin for BattlePlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_enter(AppState::Battle)
-                // .with_system(enter_battle)
+                .with_system(enter_battle)
                 .with_system(make_arena)
                 .with_system(make_ui)
                 .with_system(make_player)
-                .with_system(make_enemy), // .with_system(make_ball),
+                // .with_system(make_enemy)
+                .with_system(make_ball),
         )
         .add_system_set(
-            SystemSet::on_update(AppState::Battle), // .with_system(escape_system)
-                                                    // .with_system(reset_ball)
-                                                    // .with_system(remove_ball)
-                                                    // .with_system(player_hit)
-                                                    // .with_system(player_miss)
-                                                    // .with_system(game_over_system),
+            SystemSet::on_update(AppState::Battle)
+            // .with_system(escape_system)
+            // .with_system(reset_ball)
+            // .with_system(remove_ball)
+            .with_system(player_hit)
+            // .with_system(player_miss)
+            .with_system(game_over_system),
         )
         .add_system_set(
             SystemSet::on_exit(AppState::Battle).with_system(cleanup_system::<Cleanup>),
