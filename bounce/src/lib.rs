@@ -100,8 +100,9 @@ pub fn run() {
     app
         .add_plugins(DefaultPlugins)
         .add_plugin(AudioPlugin)
-        .add_state(AppState::Loading)
         .add_startup_system(setup)
+        .add_system(lock_release_cursor)
+        .add_state(AppState::Loading)
         .add_plugin(loading::LoadingPlugin)
         .add_plugin(menu::MenuPlugin)
         .add_plugin(game::GamePlugin)
@@ -112,4 +113,19 @@ pub fn run() {
 
 fn setup(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
+}
+
+fn lock_release_cursor(app_state: Res<State<AppState>>, mut windows: ResMut<Windows>) {
+    if let Some(window) = windows.get_primary_mut() {
+        match app_state.current() {
+            AppState::Battle | AppState::Practice => {
+                window.set_cursor_lock_mode(true);
+                window.set_cursor_visibility(false);
+            }
+            _ => {
+                window.set_cursor_lock_mode(false);
+                window.set_cursor_visibility(true);
+            }
+        }
+    }
 }
