@@ -7,7 +7,7 @@ use crate::{
     utils::{cleanup_system, escape_system, Damp, Intermediate},
     AppState, AudioVolume, MusicTrack, TimeScale,
 };
-use bevy_kira_audio::{Audio, AudioControl};
+use bevy_kira_audio::{Audio, AudioControl, AudioChannel, AudioSource, AudioApp};
 use itertools::Itertools;
 use std::f32::consts::FRAC_PI_4;
 
@@ -43,7 +43,7 @@ impl Plugin for GamePlugin {
                 miss: Timer::from_seconds(0.5, false),
             })
             .init_resource::<Slits>()
-            // .add_audio_channel::<BounceAudioChannel>()
+            .add_audio_channel::<BounceAudioChannel>()
             // .add_audio_channel::<ScoreAudioChannel>()
             .add_startup_system(setup_game)
             .add_system_set(
@@ -58,7 +58,7 @@ impl Plugin for GamePlugin {
                     .with_system(heal_enemy_base)
                     .with_system(move_slit_block)
                     .with_system(slits_system)
-                    // .with_system(bounce_audio)
+                    .with_system(bounce_audio)
                     // .with_system(score_audio)
                     // .with_system(score_effects)
                     .with_system(bounce_effects)
@@ -681,4 +681,83 @@ fn bounce_effects(
             }
         }
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn bounce_audio(
+    audio: Res<AudioChannel<BounceAudioChannel>>,
+    audios: Res<Audios>,
+    volume: Res<AudioVolume>,
+    time: Res<Time>,
+    mut timer: ResMut<Debounce>,
+    mut events: EventReader<CollisionEvent>,
+    mut bounce_entities: Local<Option<[Entity; 2]>>,
+    query: Query<(Entity, &BounceAudio)>,
+    balls: Query<(), With<Ball>>,
+    motions: Query<Option<&Motion>>,
+) {
+    let mut can_play_audio = timer.audio_bounce_long.tick(time.delta()).finished();
+    timer.audio_bounce_short.tick(time.delta());
+    timer.audio_hit.tick(time.delta());
+
+    for event in events.iter() {
+        // one of the entities must be a ball
+        let results = event.entities.map(|entity| balls.get(entity).is_ok());
+        if !results.contains(&true) {
+            continue;
+        }
+
+        let (entities, bounce_audio) = if let Ok(x) = query.get_many(event.entities) {
+            let (entities, bounce_audios): (Vec<_>, Vec<_>) = x.iter().cloned().unzip();
+            let bounce_audio = if bounce_audios.contains(&BounceAudio::Hit) {
+                BounceAudio::Hit
+            } else {
+                BounceAudio::Bounce
+            };
+            (entities.try_into().ok(), bounce_audio)
+        } else {
+            continue;
+        };
+
+        let (audio_source, debounce_timer) = match bounce_audio {
+            BounceAudio::Bounce => {
+                let index = fastrand::usize(..IMPACT_AUDIOS.len());
+                (
+                    audios.impact_audios[index].clone(),
+                    &timer.audio_bounce_short,
+                )
+            }
+            BounceAudio::Hit => (audios.hit_audio.clone(), &timer.audio_hit),
+        };
+
+        if entities != *bounce_entities {
+            can_play_audio = debounce_timer.finished();
+            *bounce_entities = entities;
+        }
+
+        if can_play_audio {
+            let velocities = motions
+                .many(event.entities)
+                .map(|maybe_motion| maybe_motion.map_or(Vec2::ZERO, |motion| motion.velocity));
+            let speed = (velocities[0] - velocities[1]).length();
+            if speed > MIN_BOUNCE_AUDIO_SPEED {
+                let normalized_speed = speed
+                    .intermediate(MIN_BOUNCE_AUDIO_SPEED, MAX_BOUNCE_AUDIO_SPEED)
+                    .clamp(0.0, 1.0);
+
+                let panning = event.hit.location().x / ARENA_WIDTH + 0.5;
+                let volume = volume.effects * (0.5 * normalized_speed + 0.5);
+                let playback_rate = 0.4 * fastrand::f32() + 0.8;
+                audio
+                    .play(audio_source)
+                    .with_volume(volume.into())
+                    .with_panning(panning.into())
+                    .with_playback_rate(playback_rate.into());
+
+                timer.audio_bounce_long.reset();
+                timer.audio_bounce_short.reset();
+            }
+        }
+    }
+    
 }
