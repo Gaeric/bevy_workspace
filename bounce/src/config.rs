@@ -39,6 +39,7 @@ pub const FLIP_TEXT_COLORS: [Color; 2] = [Color::WHITE, Color::GOLD];
 pub const MISS_AUDIO: &str = "audios/miss.flac";
 pub const EXPLOSION_AUDIO: &str = "audios/explosion.flac";
 pub const LOSE_AUDIO: &str = "audios/lose.flac";
+// pub const HIT_AUDIO: &str = "audios/hit.ogg";
 pub const HIT_AUDIO: &str = "audios/hit.ogg";
 pub const IMPACT_AUDIOS: [&str; 2] = ["audios/impacts/impact-1.ogg", "audios/impacts/impact-2.ogg"];
 

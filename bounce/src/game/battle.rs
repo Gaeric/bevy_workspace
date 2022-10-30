@@ -15,8 +15,8 @@ impl Plugin for BattlePlugin {
         )
         .add_system_set(
             SystemSet::on_update(AppState::Battle)
-            // .with_system(escape_system)
-            // .with_system(reset_ball)
+            .with_system(escape_system)
+            .with_system(reset_ball)
             // .with_system(remove_ball)
             .with_system(player_hit)
             // .with_system(player_miss)

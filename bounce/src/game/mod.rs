@@ -496,6 +496,64 @@ fn make_ball(mut commands: Commands, materials: Res<Materials>) {
         });
 }
 
+fn reset_ball(mut commands: Commands,
+              mut player_miss_events: EventReader<PlayerMissEvent>,
+              mut player_hit_events: EventReader<PlayerHitEvent>,
+              mut query: Query<(Entity, &mut Transform), (With<Ball>, With<Motion>)>,
+) {
+    let mut closure = |ball| -> Option<()> {
+        let (_, mut transform) = query.get_mut(ball).ok()?;
+        transform.translation = Vec3::new(0.0, 0.0, -1.0);
+        commands.entity(ball).remove::<Motion>();
+        Some(())
+    };
+
+    for event in player_hit_events.iter() {
+        if event.win {
+            println!("reset for win");
+            closure(event.ball);
+        }
+    }
+
+    for event in player_miss_events.iter() {
+        println!("reset for miss");
+        closure(event.ball);
+    }
+
+    for (entity, mut transform) in query.iter_mut() {
+        if transform.translation.x < -ARENA_WIDTH / 2.0
+            || transform.translation.x > ARENA_WIDTH / 2.0
+            || transform.translation.y < -ARENA_HEIGHT / 2.0
+            || transform.translation.y > ARENA_HEIGHT / 2.0
+        {
+
+            println!("reset for out of ranger");
+            transform.translation = Vec3::new(0.0, 0.0, -1.0);
+            commands.entity(entity).remove::<Motion>();
+        }
+    }
+}
+
+
+fn remove_ball(
+    mut commands: Commands,
+    mut player_miss_events: EventReader<PlayerMissEvent> ,
+    mut player_hit_events: EventReader<PlayerHitEvent>,
+    query: Query<(), With<Ball>>
+) {
+    for event in player_miss_events.iter() {
+        if event.lose && query.contains(event.ball) {
+            commands.entity(event.ball).remove::<Ball>();
+        }
+    }
+
+    for event in player_hit_events.iter() {
+        if event.win && query.contains(event.ball) {
+            commands.entity(event.ball).remove::<Ball>();
+        }
+    }
+}
+
 fn make_player_hint(
     mut commands: Commands,
     materials: Res<Materials>,
@@ -543,9 +601,10 @@ fn player_hit(
 
                 base.hp -= damage;
 
-                let win = base.hp <= 0.0;
+                let mut win = base.hp <= 0.0;
                 if win {
-                    game_over_events.send(GameOverEvent::Win);
+                    win = false;
+                    // game_over_events.send(GameOverEvent::Win);
                 }
                 timer.hit.reset();
 
