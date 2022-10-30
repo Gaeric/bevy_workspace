@@ -1,12 +1,15 @@
 use self::{
     ball::*, base::*, battle::*, effects::*, enemy::*, hint::*, physics::*, player::*, slits::*,
 };
-use crate::{config::*, score::Score, 
-            utils::{cleanup_system, escape_system, Damp, Intermediate},
-            AppState,AudioVolume, MusicTrack, TimeScale,
+use crate::{
+    config::*,
+    score::Score,
+    utils::{cleanup_system, escape_system, Damp, Intermediate},
+    AppState, AudioVolume, MusicTrack, TimeScale,
 };
 use bevy_kira_audio::{Audio, AudioControl};
 use itertools::Itertools;
+use std::f32::consts::FRAC_PI_4;
 
 mod ball;
 mod base;
@@ -58,12 +61,12 @@ impl Plugin for GamePlugin {
                     // .with_system(bounce_audio)
                     // .with_system(score_audio)
                     // .with_system(score_effects)
-                    // .with_system(bounce_effects)
+                    .with_system(bounce_effects)
                     .with_system(count_ball)
                     // .with_system(score_system)
                     .with_system(health_bar)
                     .with_system(health_bar_tracker)
-                    // .with_system(make_player_hint)
+                    .with_system(make_player_hint)
                     // .with_system(make_ball_hint)
                     .with_system(hint_system),
             )
@@ -457,4 +460,166 @@ fn make_enemy(mut commands: Commands, materials: Res<Materials>) {
                 ..default()
             });
         });
+}
+
+fn make_ball(mut commands: Commands, materials: Res<Materials>) {
+    let alpha = 1.0 / BALL_GHOSTS_COUNT as f32;
+    commands
+        .spawn_bundle(SpriteBundle {
+            transform: Transform::from_xyz(0.0, 0.0, -1.0),
+            texture: materials.ball.clone(),
+            sprite: Sprite {
+                color: Color::rgba(1.0, 1.0, 1.0, alpha),
+                ..default()
+            },
+            ..default()
+        })
+        .insert_bundle((
+            RigidBody::new(Vec2::new(BALL_SIZE, BALL_SIZE), 1.0, 1.0, 0.5),
+            PhysicsLayers::BALL,
+            BounceAudio::Bounce,
+            Ball::default(),
+            Trajectory::default(),
+            Cleanup,
+        ))
+        .with_children(|parent| {
+            for _ in 0..BALL_GHOSTS_COUNT {
+                parent.spawn_bundle(SpriteBundle {
+                    texture: materials.ball.clone(),
+                    sprite: Sprite {
+                        color: Color::rgba(1.0, 1.0, 1.0, alpha),
+                        ..default()
+                    },
+                    ..default()
+                });
+            }
+        });
+}
+
+fn make_player_hint(
+    mut commands: Commands,
+    materials: Res<Materials>,
+    query: Query<Entity, (Added<Player>, Without<Hint>)>,
+) {
+    for entity in query.iter() {
+        let hint = commands
+            .spawn_bundle(SpriteBundle {
+                transform: Transform::from_xyz(0.0, ARENA_HEIGHT / 2.0, 0.0),
+                texture: materials.hint.clone(),
+                sprite: Sprite {
+                    color: HINT_COLOR,
+                    ..default()
+                },
+                ..default()
+            })
+            .insert(Cleanup)
+            .id();
+
+        commands.entity(entity).insert(Hint(hint));
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn player_hit(
+    time: Res<Time>,
+    mut timer: ResMut<Debounce>,
+    mut collision_events: EventReader<CollisionEvent>,
+    mut player_hit_events: EventWriter<PlayerHitEvent>,
+    mut game_over_events: EventWriter<GameOverEvent>,
+    ball_query: Query<(&RigidBody, &Motion), With<Ball>>,
+    mut base_query: Query<&mut EnemyBase, Without<Ball>>,
+) {
+    if timer.hit.tick(time.delta()).finished() {
+        for event in collision_events.iter() {
+            let mut closure = |ball: Entity, base: Entity| -> Option<()> {
+                let (rigid_body, motion) = ball_query.get(ball).ok()?;
+                let mut base = base_query.get_mut(base).ok()?;
+
+                let location = event.hit.location();
+                let hp = base.hp;
+                let mass = rigid_body.mass();
+                let speed = motion.velocity.length();
+                let damage = hp.min(speed * mass).min(MAX_DAMAGE);
+
+                base.hp -= damage;
+
+                let win = base.hp <= 0.0;
+                if win {
+                    game_over_events.send(GameOverEvent::Win);
+                }
+                timer.hit.reset();
+
+                player_hit_events.send(PlayerHitEvent {
+                    ball,
+                    location,
+                    win,
+                });
+
+                Some(())
+            };
+
+            closure(event.entities[0], event.entities[1])
+                .or_else(|| closure(event.entities[1], event.entities[0]));
+        }
+    }
+}
+
+fn bounce_effects(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut timer: ResMut<Debounce>,
+    mut collision_events: EventReader<CollisionEvent>,
+    mut camera_shake_events: EventWriter<CameraShakeEvent>,
+    mut bounce_entities: Local<Option<[Entity; 2]>>,
+    materials: Res<Materials>,
+    query: Query<(), With<Ball>>,
+    motions: Query<Option<&Motion>>,
+) {
+    if timer.effects.tick(time.delta()).finished() {
+        if collision_events.is_empty() {
+            *bounce_entities = None;
+        }
+
+        for event in collision_events.iter() {
+            let results = event.entities.map(|entity| query.get(entity).is_ok());
+            if results.contains(&true) {
+                if bounce_entities.map_or(true, |entities| entities != event.entities) {
+                    let velocities = motions.many(event.entities).map(|maybe_motion| {
+                        maybe_motion.map_or(Vec2::ZERO, |motion| motion.velocity)
+                    });
+
+                    let velocity = if results[0] {
+                        velocities[0] - velocities[1]
+                    } else {
+                        velocities[1] - velocities[0]
+                    };
+
+                    let speed = velocity.length();
+                    let scale = (speed / MAX_BOUNCE_EFFECTS_SPEED).min(1.0);
+
+                    //screen shake
+                    let amplitude = velocity.normalize() * scale * 8.0;
+                    camera_shake_events.send(CameraShakeEvent { amplitude });
+                    timer.effects.reset();
+
+                    commands
+                        .spawn_bundle(SpriteSheetBundle {
+                            transform: Transform {
+                                translation: event.hit.location().extend(0.0),
+                                rotation: Quat::from_rotation_z(
+                                    f32::atan2(-velocity.y, -velocity.x) + FRAC_PI_4,
+                                ),
+                                scale: Vec3::new(0.2, 0.2, 1.0),
+                            },
+                            texture_atlas: materials.hit.clone(),
+                            ..default()
+                        })
+                        .insert(HitEffect::default())
+                        .insert(Cleanup);
+                }
+
+                *bounce_entities = Some(event.entities);
+            }
+        }
+    }
 }
